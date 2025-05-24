@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/acortar.js": {
+      "maxDuration": 10
+    }
+  }
+}

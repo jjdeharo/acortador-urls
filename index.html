@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acortador de URLs</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+        }
+        
+        .container {
+            flex: 1;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1rem;
+        }
+        
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+        }
+        
+        .lang-btn {
+            padding: 8px 12px;
+            border: 2px solid white;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .lang-btn.active {
+            background: white;
+            color: #667eea;
+        }
+        
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input[type="text"], input[type="url"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        input[type="text"]:focus, input[type="url"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        small a {
+            color: #667eea;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .result-url {
+            font-weight: bold;
+            word-break: break-all;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 5px;
+        }
+        
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .copy-btn:hover {
+            background: #218838;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .footer {
+            background: rgba(0,0,0,0.1);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+        }
+        
+        .footer a {
+            color: white;
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .language-selector {
+                position: relative;
+                top: 0;
+                right: 0;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="language-selector">
+        <button class="lang-btn" onclick="changeLanguage('ca')" id="btn-ca">CA</button>
+        <button class="lang-btn" onclick="changeLanguage('es')" id="btn-es">ES</button>
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <h1 id="title">Acortador de URLs</h1>
+            <p id="subtitle">Convierte tus enlaces largos en URLs cortas y fáciles de compartir</p>
+        </div>
+        
+        <div class="card" id="url-form-section" style="display: block;">
+            <h2 id="form-title">Acortar URL</h2>
+            
+            <form id="urlForm">
+                <div class="form-group">
+                    <label for="longUrl" id="label-url">URL a acortar:</label>
+                    <input type="url" id="longUrl" name="longUrl" required placeholder="https://ejemplo.com/mi-enlace-muy-largo">
+                </div>
+                
+                <div class="form-group">
+                    <label for="customEnding" id="label-custom">Final personalizado (opcional):</label>
+                    <input type="text" id="customEnding" name="customEnding" placeholder="mi-enlace">
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="isSecret" name="isSecret">
+                    <label for="isSecret" id="label-secret">URL secreta</label>
+                </div>
+                
+                <button type="submit" class="btn" id="btn-submit">Acortar URL</button>
+            </form>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p id="loading-text">Acortando URL...</p>
+            </div>
+            
+            <div class="result" id="result">
+                <div id="result-content"></div>
+            </div>
+        </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p><a href="https://labia.tiddlyhost.com" target="_blank" id="footer-lab">Laboratorio de aplicaciones educativas</a></p>
+        <p id="footer-author">Aplicación hecha por <a href="https://bilateria.org" target="_blank">Juan José de Haro</a></p>
+        <p><a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" id="footer-license">Esta obra está bajo una licencia Creative Commons BY-SA</a></p>
+    </div>
+
+    <script>
+        // Configuración - sin API key en el frontend
+        const API_ENDPOINT = '/api/acortar'; // Tu función de Vercel
+        
+        // Verificar configuración al cargar
+        function checkApiConfiguration() {
+            // Siempre mostrar el formulario ya que la API key está en el servidor
+            document.getElementById('url-form-section').style.display = 'block';
+        }
+        
+        // Textos en ambos idiomas
+        const texts = {
+            es: {
+                title: 'Acortador de URLs',
+                subtitle: 'Convierte tus enlaces largos en URLs cortas y fáciles de compartir',
+                'form-title': 'Acortar URL',
+                'label-url': 'URL a acortar:',
+                'label-custom': 'Final personalizado (opcional):',
+                'label-secret': 'URL secreta',
+                'btn-submit': 'Acortar URL',
+                'loading-text': 'Acortando URL...',
+                'footer-lab': 'Laboratorio de aplicaciones educativas',
+                'footer-author': 'Aplicación hecha por',
+                'footer-license': 'Esta obra está bajo una licencia Creative Commons BY-SA',
+                'success-message': 'URL acortada con éxito:',
+                'copy-btn': 'Copiar',
+                'copied': '¡Copiado!',
+                'error-invalid-url': 'Por favor, introduce una URL válida',
+                'error-network': 'Error de red. Inténtalo de nuevo.',
+                'error-custom-ending': 'El final personalizado ya está en uso',
+                'error-unauthorized': 'Error de autorización. Clave API inválida.',
+                'error-quota': 'Has excedido tu cuota de solicitudes.',
+                'error-not-found': 'URL no encontrada',
+                'error-unknown': 'Error desconocido. Inténtalo de nuevo.'
+            },
+            ca: {
+                title: 'Escurçador d\'URLs',
+                subtitle: 'Converteix els teus enllaços llargs en URLs curtes i fàcils de compartir',
+                'form-title': 'Escurçar URL',
+                'label-url': 'URL a escurçar:',
+                'label-custom': 'Final personalitzat (opcional):',
+                'label-secret': 'URL secreta',
+                'btn-submit': 'Escurçar URL',
+                'loading-text': 'Escurçant URL...',
+                'footer-lab': 'Laboratori d\'aplicacions educatives',
+                'footer-author': 'Aplicació feta per',
+                'footer-license': 'Aquesta obra està sota una llicència Creative Commons BY-SA',
+                'success-message': 'URL escurçada amb èxit:',
+                'copy-btn': 'Copiar',
+                'copied': 'Copiat!',
+                'error-invalid-url': 'Si us plau, introdueix una URL vàlida',
+                'error-network': 'Error de xarxa. Torna-ho a intentar.',
+                'error-custom-ending': 'El final personalitzat ja està en ús',
+                'error-unauthorized': 'Error d\'autorització. Clau API invàlida.',
+                'error-quota': 'Has excedit la teva quota de sol·licituds.',
+                'error-not-found': 'URL no trobada',
+                'error-unknown': 'Error desconegut. Torna-ho a intentar.'
+            }
+        };
+        
+        let currentLanguage = 'es';
+        
+        // Detectar idioma del navegador
+        function detectLanguage() {
+            const savedLang = localStorage.getItem('urlShortener_language');
+            if (savedLang) {
+                return savedLang;
+            }
+            
+            const browserLang = navigator.language || navigator.userLanguage;
+            return browserLang.startsWith('ca') ? 'ca' : 'es';
+        }
+        
+        // Cambiar idioma
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            localStorage.setItem('urlShortener_language', lang);
+            updateTexts();
+            updateLanguageButtons();
+        }
+        
+        // Actualizar textos
+        function updateTexts() {
+            const langTexts = texts[currentLanguage];
+            
+            for (const [key, value] of Object.entries(langTexts)) {
+                const element = document.getElementById(key);
+                if (element) {
+                    if (element.tagName === 'INPUT' && element.type === 'submit') {
+                        element.value = value;
+                    } else {
+                        element.textContent = value;
+                    }
+                }
+            }
+        }
+        
+        // Actualizar botones de idioma
+        function updateLanguageButtons() {
+            document.getElementById('btn-ca').classList.toggle('active', currentLanguage === 'ca');
+            document.getElementById('btn-es').classList.toggle('active', currentLanguage === 'es');
+        }
+        
+        // Mostrar loading
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('btn-submit').disabled = show;
+        }
+        
+        // Mostrar resultado
+        function showResult(type, message, url = null) {
+            const resultDiv = document.getElementById('result');
+            const contentDiv = document.getElementById('result-content');
+            
+            resultDiv.className = `result ${type}`;
+            
+            if (type === 'success' && url) {
+                contentDiv.innerHTML = `
+                    <p>${message}</p>
+                    <div class="result-url">${url}</div>
+                    <button class="copy-btn" onclick="copyToClipboard('${url}')">${texts[currentLanguage]['copy-btn']}</button>
+                `;
+            } else {
+                contentDiv.innerHTML = `<p>${message}</p>`;
+            }
+            
+            resultDiv.style.display = 'block';
+        }
+        
+        // Copiar al portapapeles
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = texts[currentLanguage]['copied'];
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            } catch (err) {
+                console.error('Error al copiar:', err);
+            }
+        }
+        
+        // Manejar errores de la API
+        function handleApiError(status, message) {
+            const langTexts = texts[currentLanguage];
+            
+            console.log('Manejando error - Status:', status, 'Message:', message);
+            
+            // Si el status es 0, probablemente es un problema de CORS o red
+            if (status === 0) {
+                if (message.includes('CORS') || message.includes('fetch')) {
+                    return 'Error de CORS o conectividad. Verifica que la API esté accesible.';
+                }
+                return langTexts['error-network'];
+            }
+            
+            switch (status) {
+                case 400:
+                    if (message.includes('custom ending already in use')) {
+                        return langTexts['error-custom-ending'];
+                    }
+                    return langTexts['error-invalid-url'];
+                case 401:
+                    return langTexts['error-unauthorized'];
+                case 403:
+                    return langTexts['error-quota'];
+                case 404:
+                    return langTexts['error-not-found'];
+                case 500:
+                    return langTexts['error-network'];
+                default:
+                    return `${langTexts['error-unknown']} (Status: ${status}, Message: ${message})`;
+            }
+        }
+        
+        // Mostrar configuración de API
+        function showApiConfig() {
+            document.getElementById('api-config').style.display = 'block';
+            document.getElementById('url-form-section').style.display = 'none';
+        }
+        
+        // Guardar clave API
+        function saveApiKey() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            
+            if (!apiKey) {
+                alert(texts[currentLanguage]['error-api-key-required'] || 'La clave API es requerida');
+                return;
+            }
+            
+            localStorage.setItem('urlShortener_apiKey', apiKey);
+            checkApiConfiguration();
+        }
+        
+        // Resetear clave API
+        function resetApiKey() {
+            if (confirm(texts[currentLanguage]['confirm-reset-api'] || '¿Estás seguro de que quieres cambiar la clave API?')) {
+                localStorage.removeItem('urlShortener_apiKey');
+                document.getElementById('apiKey').value = '';
+                checkApiConfiguration();
+            }
+        }
+        
+        // Acortar URL usando la función de Vercel
+        async function shortenUrl(url, customEnding = '', isSecret = false) {
+            try {
+                console.log('Enviando petición a función de Vercel...');
+                
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        customEnding: customEnding,
+                        isSecret: isSecret
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('Respuesta de Vercel:', data);
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `Error HTTP ${response.status}`);
+                }
+                
+                return data.shortUrl;
+            } catch (error) {
+                console.error('Error en la petición:', error);
+                
+                if (error.name === 'TypeError' || error.message.includes('Failed to fetch')) {
+                    throw new Error(texts[currentLanguage]['error-network']);
+                }
+                throw error;
+            }
+        }
+        
+        // Manejar envío del formulario
+        document.getElementById('urlForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const longUrl = document.getElementById('longUrl').value.trim();
+            const customEnding = document.getElementById('customEnding').value.trim();
+            const isSecret = document.getElementById('isSecret').checked;
+            
+            if (!longUrl) {
+                showResult('error', texts[currentLanguage]['error-invalid-url']);
+                return;
+            }
+            
+            // Validar URL
+            try {
+                new URL(longUrl);
+            } catch {
+                showResult('error', texts[currentLanguage]['error-invalid-url']);
+                return;
+            }
+            
+            showLoading(true);
+            document.getElementById('result').style.display = 'none';
+            
+            try {
+                const shortUrl = await shortenUrl(longUrl, customEnding, isSecret);
+                showResult('success', texts[currentLanguage]['success-message'], shortUrl);
+            } catch (error) {
+                console.error('Error capturado:', error);
+                
+                // Intentar extraer el código de estado del mensaje de error
+                let statusCode = 0;
+                if (error.message.includes('HTTP 400')) statusCode = 400;
+                else if (error.message.includes('HTTP 401')) statusCode = 401;
+                else if (error.message.includes('HTTP 403')) statusCode = 403;
+                else if (error.message.includes('HTTP 404')) statusCode = 404;
+                else if (error.message.includes('HTTP 500')) statusCode = 500;
+                
+                const errorMessage = handleApiError(statusCode, error.message);
+                showResult('error', errorMessage);
+            } finally {
+                showLoading(false);
+            }
+        });
+        
+        // Inicializar aplicación
+        document.addEventListener('DOMContentLoaded', () => {
+            currentLanguage = detectLanguage();
+            updateTexts();
+            updateLanguageButtons();
+            checkApiConfiguration();
+        });
+    </script>
+</body>
+</html>
